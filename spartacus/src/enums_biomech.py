@@ -132,6 +132,8 @@ class AnatomicalVector:
         INFEROSUPERIOR = "inferosuperior"
         POSTEROANTERIOR = "posteroanterior"
         MEDIOLATERAL = "mediolateral"
+        LATEROMEDIAL = "lateromedial"
+        SUPEROINFERIOR = "superoinferior"
 
     class Thorax(Enum):
         SPINAL_CANAL_AXIS = "spinal canal axis"  # pointing infero-superior
@@ -150,6 +152,9 @@ class AnatomicalVector:
 
 class AnatomicalLandmark:
     """Enum for the biomechanical origins of the segment"""
+
+    class Global(Enum):
+        IMAGING_ORIGIN = "imaging centre"
 
     class Thorax(Enum):
 
@@ -284,6 +289,11 @@ class AnatomicalLandmark:
             "clavicle origin": cls.Clavicle.CUSTOM,
             "functional": cls.Other.FUNCTIONAL_CENTER,
             "imaging inferosuperior axis": AnatomicalVector.Thorax.SPINAL_CANAL_AXIS,
+            "imaging superoinferior axis": AnatomicalVector.Global.SUPEROINFERIOR,
+            "imaging lateromedial axis": AnatomicalVector.Global.LATEROMEDIAL,
+            "imaging mediolateral axis": AnatomicalVector.Global.MEDIOLATERAL,
+            "imaging posteroanterior axis": AnatomicalVector.Global.POSTEROANTERIOR,
+            "imaging centre": AnatomicalLandmark.Global.IMAGING_ORIGIN,
         }
 
         the_enum = biomech_origin_to_enum.get(biomech_origin)
@@ -319,6 +329,51 @@ class JointType(Enum):
         the_enum = dico.get(joint)
         if the_enum is None:
             raise ValueError(f"{joint} is not a valid joint.")
+
+        return the_enum
+
+    @property
+    def to_string(self):
+        dico = {
+            self.GLENO_HUMERAL: "glenohumeral",
+            self.SCAPULO_THORACIC: "scapulothoracic",
+            self.ACROMIO_CLAVICULAR: "acromioclavicular",
+            self.STERNO_CLAVICULAR: "sternoclavicular",
+            self.THORACO_HUMERAL: "thoracohumeral",
+        }
+
+        the_enum = dico.get(self)
+        if the_enum is None:
+            raise ValueError(f"{self} is not a valid joint.")
+
+        return the_enum
+
+    @property
+    def child(self):
+        dico = {
+            self.STERNO_CLAVICULAR: Segment.CLAVICLE,
+            self.ACROMIO_CLAVICULAR: Segment.SCAPULA,
+            self.SCAPULO_THORACIC: Segment.SCAPULA,
+            self.GLENO_HUMERAL: Segment.HUMERUS,
+        }
+
+        the_enum = dico.get(self)
+        if the_enum is None:
+            raise ValueError(f"{self} is not a valid joint.")
+        return the_enum
+
+    @property
+    def parent(self):
+        dico = {
+            self.STERNO_CLAVICULAR: Segment.THORAX,
+            self.ACROMIO_CLAVICULAR: Segment.CLAVICLE,
+            self.SCAPULO_THORACIC: Segment.THORAX,
+            self.GLENO_HUMERAL: Segment.SCAPULA,
+        }
+
+        the_enum = dico.get(self)
+        if the_enum is None:
+            raise ValueError(f"{self} is not a valid joint.")
 
         return the_enum
 
@@ -465,6 +520,10 @@ class Segment(Enum):
             raise ValueError(f"{segment} is not a valid segment.")
 
         return the_enum
+
+    @property
+    def to_string(self):
+        return self.value
 
 
 class Correction(Enum):

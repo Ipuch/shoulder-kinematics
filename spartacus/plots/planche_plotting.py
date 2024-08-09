@@ -22,14 +22,17 @@ def get_color(article):
     opacity = 0.5
     if color is None:
         print(f"Color not found for {article}. Generating a random color.")
-        random_ints = np.random.randint(0, 255, 3).tolist() + [opacity]
-        #     turn it in to a tuple[int]
-        random_ints = tuple(random_ints)
-        color = f"rgba{random_ints}"
-    else:
-        color = f"rgba{tuple(list(color) + [opacity])}"
+        random_ints = np.random.randint(0, 255, 3).tolist()
+        AUTHORS_COLORS[article] = random_ints
+        color = random_ints
+
+    color = f"rgba{tuple(list(color) + [opacity])}"
 
     return color
+
+
+def get_rank(name: str) -> int:
+    return int(name.split(" ")[0][1]) if name.split(" ")[0][-1] == "a" else int(name.split(" ")[0][1:])
 
 
 class DataPlanchePlotting:
@@ -145,11 +148,16 @@ class DataPlanchePlotting:
         self.fig.update_yaxes(title_text=f"{joint[0].upper()}{joint[1:].lower()} (°)", row=row + 1, col=col_left + 1)
 
     def plot_timeserie(self, df, article, row, col, color, opacity):
+        name = AUTHOR_DISPLAYED_STUDY.get(article)
+        if name is None:
+            name = article
+
         self.fig.add_trace(
             go.Scatter(
                 x=df["humerothoracic_angle"],
                 y=df["value"],
-                name=AUTHOR_DISPLAYED_STUDY[article],
+                name=name,
+                legendrank=get_rank(name),
                 # name=article,
                 legendgroup=(
                     "_in_vivo" if df[self.options["marker_symbol"][0]].unique().all() else "_ex_vivo"

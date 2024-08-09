@@ -6,6 +6,8 @@ class DatasetCSV(Enum):
     """Enum for the dataset csv files, with dynamic path"""
 
     CLEAN = Path(__file__).parent.parent / "dataset" / "dataset_clean.csv"
+    DATASETS = Path(__file__).parent.parent / "dataset" / "dataset_of_datasets.csv"
+    JOINT = Path(__file__).parent.parent / "dataset" / "dataset_clean_of_joint_data.csv"
     BIOMECH_DIRECTIONS = Path(__file__).parent.parent / "dataset" / "dataset_segment_directions.csv"
 
 
@@ -15,12 +17,14 @@ class DataFolder(Enum):
     CHU_2012 = Path(__file__).parent.parent / "data" / "#3_Chu_et_al"
     FUNG_2001 = Path(__file__).parent.parent / "data" / "#4_Fung_et_al"
     GUTIERREZ_DELGADO_2017 = Path(__file__).parent.parent / "data" / "#5_Gutierrez_Delgado_et_al"
-    KOLZ_2020 = Path(__file__).parent.parent / "data" / "#6_Henninger_et_al" / "6a_PA"
-    MCCLURE_2001 = Path(__file__).parent.parent / "data" / "#7_Karduna_et_al"
+    HENNINGER_2020 = Path(__file__).parent.parent / "data" / "#6_Henninger_et_al" / "6a_PA"
+    HENNINGER_2020_6b = Path(__file__).parent.parent / "data" / "#6_Henninger_et_al" / "6b_AC"
+    HENNINGER_2020_6c = Path(__file__).parent.parent / "data" / "#6_Henninger_et_al" / "6c_GC"
+    KARDUNA_2001 = Path(__file__).parent.parent / "data" / "#7_Karduna_et_al"
     KIJIMA_2015 = Path(__file__).parent.parent / "data" / "#8_Kijima_et_al"
     KIM_2017 = Path(__file__).parent.parent / "data" / "#9_Kim_et_al"
     KONOZO_2017 = Path(__file__).parent.parent / "data" / "#10_Kozono_et_al"
-    LAWRENCE_2014 = Path(__file__).parent.parent / "data" / "#11_Ludewig_et_al"
+    LUDEWIG_2014 = Path(__file__).parent.parent / "data" / "#11_Ludewig_et_al"
     MATSUKI_2011 = Path(__file__).parent.parent / "data" / "#12_Matsuki_et_al"
     MATSUMURA_2013 = Path(__file__).parent.parent / "data" / "#13_Matsumura_et_al"
     MOISSENET = Path(__file__).parent.parent / "data" / "#14_Moissenet_et_al"
@@ -40,12 +44,14 @@ class DataFolder(Enum):
             "#3_Chu_et_al": cls.CHU_2012,  # "Chu et al 2012"
             "#4_Fung_et_al": cls.FUNG_2001,  # "Fung et al 2001"
             "#5_Gutierrez_Delgado_et_al": cls.GUTIERREZ_DELGADO_2017,  # "Gutierrez Delgado et al 2017"
-            "#6_Henninger_et_al/6a_PA": cls.KOLZ_2020,  # "Kolz et al 2020
-            "#7_Karduna_et_al": cls.MCCLURE_2001,
+            "#6_Henninger_et_al/6a_PA": cls.HENNINGER_2020,  # "Kolz et al 2020
+            "#6_Henninger_et_al/6b_AC": cls.HENNINGER_2020_6b,  # "Kolz et al 2020
+            "#6_Henninger_et_al/6c_GC": cls.HENNINGER_2020_6c,  # "Kolz et al 2020
+            "#7_Karduna_et_al": cls.KARDUNA_2001,
             "#8_Kijima_et_al": cls.KIJIMA_2015,  # "Kijima et al 2015"
             "#9_Kim_et_al": cls.KIM_2017,  # "Kim et al 2017"
             "#10_Kozono_et_al": cls.KONOZO_2017,  # "Kozono et al 2017"
-            "#11_Ludewig_et_al": cls.LAWRENCE_2014,
+            "#11_Ludewig_et_al": cls.LUDEWIG_2014,
             "#12_Matsuki_et_al": cls.MATSUKI_2011,  # "Matsuki et al 2011"
             # "Matsuki et al 2011": cls.MATSUKI_2011,
             # "Matsuki et al 2012": cls.MATSUKI_2012,
@@ -76,12 +82,14 @@ class DataFolder(Enum):
             self.CHU_2012: "Chu et al.",
             self.FUNG_2001: "Fung et al.",
             self.GUTIERREZ_DELGADO_2017: "Gutierrez Delgado et al.",
-            self.KOLZ_2020: "Henninger et al.",
-            self.MCCLURE_2001: "Karduna et al.",
+            self.HENNINGER_2020: "Henninger et al.",
+            self.HENNINGER_2020_6b: "Henninger et al. 6b AC",
+            self.HENNINGER_2020_6c: "Henninger et al. 6c GC",
+            self.KARDUNA_2001: "Karduna et al.",
             self.KIJIMA_2015: "Kijima et al.",
             self.KIM_2017: "Kim et al.",
             self.KONOZO_2017: "Kozono et al.",
-            self.LAWRENCE_2014: "Lawrence et al.",
+            self.LUDEWIG_2014: "Ludewig et al.",
             self.MATSUKI_2011: "Matsuki et al.",
             self.MATSUMURA_2013: "Matsumura et al.",
             self.MOISSENET: "Moissenet et al.",

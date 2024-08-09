@@ -190,12 +190,20 @@ class Frame:
         is_z_axis_crossed_twice = "z^" in y_axis and "^z" in x_axis or "z^" in y_axis and "z^" in x_axis
 
         if is_x_axis_crossed_twice:
-            return cls.from_x_crossed_twice(
-                x_axis=parse_axis(x_axis),
-                z_axis=parse_axis(y_axis, cross_product_side="first", arm_side=side),
-                origin=AnatomicalLandmark.from_string(origin),
-                segment=segment,
-            )
+            if y_axis == "z^x" and "x^" in z_axis and "^x" in y_axis:
+                return cls.from_x_crossed_twice(
+                    x_axis=parse_axis(x_axis, arm_side=side),
+                    z_axis=parse_axis(z_axis, cross_product_side="second", arm_side=side),
+                    origin=AnatomicalLandmark.from_string(origin),
+                    segment=segment,
+                )
+            else:
+                return cls.from_x_crossed_twice(
+                    x_axis=parse_axis(x_axis, arm_side=side),
+                    z_axis=parse_axis(y_axis, cross_product_side="first", arm_side=side),
+                    origin=AnatomicalLandmark.from_string(origin),
+                    segment=segment,
+                )
 
         if is_y_axis_crossed_twice:
             if z_axis == "x^y" and "y^" in x_axis and "^y" in z_axis:
@@ -259,6 +267,7 @@ class Frame:
             )
 
         if are_all_axes_empty:
+            # previously for Nishinaka that as only the information on distal origin for joint translation information
             return cls(x_axis=None, y_axis=None, z_axis=None, origin=origin, segment=segment)
 
         if cls.is_one_axis_crossed_twice(x_axis, y_axis, z_axis):
@@ -411,14 +420,11 @@ class Frame:
 
     @property
     def is_left_side(self) -> bool:
-        pass
-        # TODO: Implement this property
+        return self.side == "left"
 
     @property
     def is_direct(self) -> bool:
-        # todo
-        pass
-        # return np.linalg.det(self.get_rotation_matrix()) > 0
+        return self.get_default_rotation_matrix == 1.0
 
     def __print__(self):
         return f"Frame: {self.x_axis}, {self.y_axis}, {self.z_axis}, {self.origin}, {self.segment}"

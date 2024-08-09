@@ -61,12 +61,15 @@ def isb_framed_rotation_matrix_from_euler_angles(
     Returns
     -------
     np.ndarray
-        The joint rotation matrix in a ISB-like manner (we may add an extra correction later)
+        The joint rotation matrix in an ISB-like manner (we may add an extra correction later)
     """
     rotation_matrix = from_euler_angles_to_rotation_matrix(previous_sequence_str, rot1, rot2, rot3)
-    converted_rotation_matrix = bsys_child.get_rotation_matrix() @ rotation_matrix @ bsys_parent.get_rotation_matrix().T
 
-    return converted_rotation_matrix
+    return set_corrections_on_rotation_matrix(
+        child_matrix_correction=bsys_child.get_rotation_matrix(),
+        matrix=rotation_matrix,
+        parent_matrix_correction=bsys_parent.get_rotation_matrix(),
+    )
 
 
 def to_left_handed_frame(
@@ -92,7 +95,8 @@ def set_corrections_on_rotation_matrix(
     parent_matrix_correction: np.ndarray,
 ):
     """Returns the rotation matrix with the child and parent correction applied"""
-    return child_matrix_correction @ matrix @ parent_matrix_correction.T
+    # return child_matrix_correction @ matrix @ parent_matrix_correction.T
+    return parent_matrix_correction @ matrix @ child_matrix_correction.T
 
 
 def convert_euler_angles_and_frames_to_isb(
@@ -117,8 +121,97 @@ def convert_euler_angles_and_frames_to_isb(
         bsys_child,
     )
 
-    new_rotation_matrix_object = mat_2_rotation(isb_framed_rotation_matrix)
-    return biorbd.Rotation.toEulerAngles(new_rotation_matrix_object, seq=new_sequence_str).to_array()
+    return rotation_matrix_2_euler_angles(isb_framed_rotation_matrix, EulerSequence.from_string(new_sequence_str))
+
+
+def quick_fix_x_rot_in_yxy_from_matrix(angles: np.ndarray, matrix: np.ndarray) -> np.ndarray:
+    """
+
+    Parameters:
+    angles (np.ndarray): Array of Euler angles [α, β, γ] in radians,
+                             where β is the rotation around the x-axis.
+    matrix (np.ndarray): 3x3 rotation matrix corresponding to the YXY sequence.
+
+    4. Our Solution:
+       We introduce a check based on sin(β):
+       If matrix[1, 0] < 0 or matrix[1, 2] > 0, we infer β < 0 and adjust accordingly.
+
+       NOTE: It may induce some sort of gimbal lock when γ < np.pi/2
+    """
+    if matrix[1, 0] < 0 or matrix[1, 2] > 0:
+        return quick_fix_x_rot_in_yxy(angles)
+    else:
+        return angles
+
+
+def quick_fix_x_rot_in_yxy_if_x_positive(angles: np.ndarray) -> np.ndarray:
+    """
+
+    Parameters:
+    angles (np.ndarray): Array of Euler angles [α, β, γ] in radians,
+                             where β is the rotation around the x-axis.
+    matrix (np.ndarray): 3x3 rotation matrix corresponding to the YXY sequence.
+
+    4. Our Solution:
+       We introduce a check based on sin(β):
+       If matrix[1, 0] < 0 or matrix[1, 2] > 0, we infer β < 0 and adjust accordingly.
+
+       NOTE: It may induce some sort of gimbal lock when γ < np.pi/2
+    """
+    if angles[1] > 0:
+        return quick_fix_x_rot_in_yxy(angles)
+    else:
+        return angles
+
+
+def quick_fix_x_rot_in_yxy(angles: np.ndarray) -> np.ndarray:
+    """
+    🔄 Quick Fix for X Rotation in YXY Euler Angle Sequence: Resolving the β Ambiguity 🧭
+
+    This function addresses a critical issue in matrix-to-Euler conversions for YXY sequences,
+    specifically focusing on resolving the ambiguity of the x-axis rotation (β).
+
+    Key Concepts:
+    1. YXY Euler Angle Sequence: R = Ry(α) * Rx(β) * Ry(γ)
+       where α, γ ∈ [-π, π] and traditionally β ∈ [0, π]
+
+    R = [cos(α)cos(γ) - sin(α)cos(β)sin(γ)    sin(α)sin(β)    cos(α)sin(γ) + sin(α)cos(β)cos(γ)]
+        [sin(β)sin(γ)                         cos(β)          -sin(β)cos(γ)                    ]
+        [-sin(α)cos(γ) - cos(α)cos(β)sin(γ)   cos(α)sin(β)    -sin(α)sin(γ) + cos(α)cos(β)cos(γ)]
+
+    2. The Fundamental Issue:
+       Standard conversion (β = arccos(r22)) fails to distinguish between β and -β,
+       as cos(-β) = cos(β).
+
+    3. The Ambiguity:
+       (α, β, γ) and (α ± π, -β, γ ± π) can represent the same rotation.
+
+    Parameters:
+    angles (np.ndarray): Array of Euler angles [α, β, γ] in radians,
+                             where β is the rotation around the x-axis.
+
+    Returns:
+    np.ndarray: Corrected Euler angles with the proper sign for the x rotation (β).
+
+    Note:
+    This function resolves the β sign ambiguity by checking matrix[1, 0] (sin(β)sin(γ))
+    and matrix[1, 2] (-sin(β)cos(γ)). It works for all values of γ and ensures correct
+    sign determination even with floating-point precision issues near extreme angles.
+
+    Remember: In the realm of 3D rotations, not all paths lead to Rome,
+    but they might lead to the same orientation! 🌐
+    """
+    new_angles = angles.copy()
+
+    new_angles[1] *= -1
+    new_angles[0] += np.pi
+    new_angles[2] += np.pi
+
+    new_angles[0] = (new_angles[0] + np.pi) % (2 * np.pi) - np.pi  # α in [-π, π]
+    new_angles[1] = (new_angles[1] + np.pi) % (2 * np.pi) - np.pi  # β in [-π, π]
+    new_angles[2] = (new_angles[2] + np.pi) % (2 * np.pi) - np.pi  # γ in [-π, π]
+
+    return new_angles
 
 
 def rotation_matrix_2_euler_angles(
@@ -126,7 +219,9 @@ def rotation_matrix_2_euler_angles(
     euler_sequence: EulerSequence,
 ) -> np.ndarray:
     rotation_matrix_object = mat_2_rotation(rotation_matrix)
-    return biorbd.Rotation.toEulerAngles(rotation_matrix_object, seq=euler_sequence.value.lower()).to_array()
+    new_angles = biorbd.Rotation.toEulerAngles(rotation_matrix_object, seq=euler_sequence.value.lower()).to_array()
+
+    return new_angles
 
 
 def get_angle_conversion_callback_to_isb_with_sequence(

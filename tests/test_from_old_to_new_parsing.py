@@ -1,3 +1,9 @@
+"""
+Slowly migrating from the old parsing to the new parsing,
+the biomech direction csv file is used to verify the correctness of the new parsing.
+for is isb and postero_anterior_local_axis, medio_lateral_local_axis, infero_superior_local_axis
+"""
+
 import pandas as pd
 import pytest
 
@@ -40,7 +46,7 @@ def test_new_parsing(author):
             segment_cols = get_segment_columns(segment_enum)
             segment_cols_direction = get_segment_columns_direction(segment_enum)
             # first check
-            if check_segment_filled_with_nan(row, segment_cols, print_warnings=print_warnings):
+            if check_segment_filled_with_nan(row, segment_cols_direction, print_warnings=print_warnings):
                 continue
 
             x_direction = sub_df_expected_directions[segment_cols[0]]
@@ -82,22 +88,8 @@ def test_new_parsing(author):
                 assert frame.y_axis.biomech_direction() == BiomechDirection.from_string(y_direction)
                 assert frame.z_axis.biomech_direction() == BiomechDirection.from_string(z_direction)
 
-                try:
-                    is_isb_col = get_is_isb_column(segment_enum)
-                    assert frame.is_isb == row[is_isb_col]
-
-                except Exception as e:
-                    print(e)
-                    print("MISLABELED ISB:")
-                    print(tuple_test)
-                    print("to check ISB:")
-                    print("landmarks :", frame.landmarks)
-                    print("expected landmarks :", frame.expected_isb_landmarks)
-
-                    print(frame.origin)
-                    print(frame.is_isb_oriented)
-                    print("has isb landmark", frame.has_isb_landmarks)
-                    print("####################")
+                is_isb_col = get_is_isb_column(segment_enum)
+                assert frame.is_isb == sub_df_expected_directions[is_isb_col]
 
                 # build the coordinate system
                 bsys_old = BiomechCoordinateSystem.from_biomech_directions(
@@ -113,10 +105,4 @@ def test_new_parsing(author):
                 assert frame.medio_lateral_local_axis == bsys_new.medio_lateral_axis
                 assert frame.infero_superior_local_axis == bsys_new.infero_superior_axis
 
-            # third check if the segment is direct or not
-            if not bsys_new.is_direct():
-                if print_warnings:
-                    print(
-                        f"{row.dataset_authors}, " f"Segment {segment_enum.value} is not direct, " f"it should be !!!"
-                    )
-                output = False
+            assert bsys_new.is_direct()

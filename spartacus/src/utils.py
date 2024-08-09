@@ -1,5 +1,6 @@
 import biorbd
 import numpy as np
+import pandas as pd
 
 from .enums_biomech import Segment
 
@@ -114,16 +115,6 @@ def get_correction_column(segment: Segment) -> str:
     return columns.get(segment, ValueError(f"{segment} is not a valid segment."))
 
 
-def get_is_correctable_column(segment: Segment) -> str:
-    columns = {
-        Segment.THORAX: "thorax_is_isb_correctable",
-        Segment.CLAVICLE: "clavicle_is_isb_correctable",
-        Segment.SCAPULA: "scapula_is_isb_correctable",
-        Segment.HUMERUS: "humerus_is_isb_correctable",
-    }
-    return columns.get(segment, ValueError(f"{segment} is not a valid segment."))
-
-
 def compute_rotation_matrix_from_axes(
     anterior_posterior_axis: np.ndarray,
     infero_superior_axis: np.ndarray,
@@ -172,3 +163,26 @@ def compute_rotation_matrix_from_axes(
         ],
         dtype=np.float64,
     ).T  # where the transpose was missing in the original code
+
+
+def convert_df_to_1dof_per_line(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert a dataframe with 3 degrees of freedom per line to a dataframe with 1 degree of freedom per line"""
+
+    df_transformed = pd.DataFrame(
+        {
+            "unit": df["unit"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            "article": df["article"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            "joint": df["joint"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            "humeral_motion": df["humeral_motion"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            "shoulder_id": df["shoulder_id"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            "in_vivo": df["in_vivo"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            "xp_mean": df["xp_mean"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            # The reorganized values
+            "humerothoracic_angle": df["humerothoracic_angle"].values[:, np.newaxis].repeat(3, axis=1).T.flatten(),
+            "value": df[["value_dof1", "value_dof2", "value_dof3"]].values.T.flatten(),
+            "legend": df[["legend_dof1", "legend_dof2", "legend_dof3"]].values.T.flatten(),
+            "degree_of_freedom": np.array([[1, 2, 3]]).repeat(repeats=df.shape[0], axis=0).T.flatten(),
+        }
+    )
+
+    return df_transformed

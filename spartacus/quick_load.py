@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 
 from .enums import DatasetCSV
+from .src.load import Spartacus as sp
 
 
 def import_data(correction: bool = True):
@@ -12,4 +13,12 @@ def import_data(correction: bool = True):
     if "confident_data.csv" in os.listdir(str(Path(DatasetCSV.JOINT.value).parent)):
         return pd.read_csv(Path(DatasetCSV.JOINT.value).parent / file)
     else:
-        raise ValueError("The confident_data.csv file does not exist. You must run the correction first.")
+        try:
+            spartacus_dataset = sp.load()
+            spartacus_dataset.export()
+        except:
+            raise ValueError("The confident_data.csv file does not exist. You must run the correction first.")
+
+        return (
+            spartacus_dataset.corrected_confident_data_values if correction else spartacus_dataset.confident_data_values
+        )
